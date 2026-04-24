@@ -9,20 +9,6 @@
 
 ---
 
-## 📸 Visual Gallery
-
-| Semaphore KPI Cards | Ranked HTML Table | Chart.js Gauge |
-|---------------------|-------------------|----------------|
-| ![kpi](docs/screenshots/semaphore_card.png) | ![table](docs/screenshots/ranked_table.png) | ![gauge](docs/screenshots/gauge.png) |
-
-| 3D Force Graph | Collections Table |
-|----------------|-------------------|
-| ![graph](docs/screenshots/force_graph.png) | ![collections](docs/screenshots/collections.png) |
-
-> *All visuals use generated demo data — no real company information*
-
----
-
 ## ✨ Features
 
 - **Semaphore KPI Cards** — dynamic color-coded cards with calibration offset support (+N pp adjustments)
