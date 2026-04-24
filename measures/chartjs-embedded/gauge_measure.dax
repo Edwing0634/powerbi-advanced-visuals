@@ -1,0 +1,50 @@
+// ============================================================
+// Gauge / Doughnut Chart — HTML Content Visual
+// Shows overall achievement % as a half-doughnut gauge.
+// Color changes dynamically: green >= 100%, yellow >= 80%, red < 80%
+// ============================================================
+
+HTML_Gauge_Achievement =
+
+VAR _production  = SUM( fact_production[amount] )
+VAR _target      = SUM( fact_production[target_amount] )
+VAR _pct         = DIVIDE( _production, _target, 0 ) * 100
+VAR _pct_capped  = MIN( _pct, 100 )
+VAR _remainder   = 100 - _pct_capped
+
+VAR _color =
+    SWITCH( TRUE(), _pct >= 100, "#28a745", _pct >= 80, "#ffc107", "#dc3545" )
+
+VAR _label = FORMAT( _pct / 100, "0.0%" )
+
+RETURN
+"<html><head>
+<script src='https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js'></script>
+</head><body style='margin:0;padding:8px;font-family:Segoe UI,sans-serif;text-align:center;'>
+<div style='position:relative;max-width:200px;margin:0 auto;'>
+  <canvas id='gauge'></canvas>
+  <div style='position:absolute;bottom:8px;left:50%;transform:translateX(-50%);'>
+    <div style='font-size:24px;font-weight:700;color:" & _color & ";'>" & _label & "</div>
+    <div style='font-size:10px;color:#6c757d;'>Achievement</div>
+  </div>
+</div>
+<script>
+new Chart(document.getElementById('gauge'), {
+  type: 'doughnut',
+  data: {
+    datasets: [{
+      data: [" & FORMAT( _pct_capped, "0.0" ) & ", " & FORMAT( _remainder, "0.0" ) & "],
+      backgroundColor: ['" & _color & "', '#e9ecef'],
+      borderWidth: 0,
+      circumference: 180,
+      rotation: -90
+    }]
+  },
+  options: {
+    cutout: '72%',
+    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    responsive: true
+  }
+});
+</script>
+</body></html>"

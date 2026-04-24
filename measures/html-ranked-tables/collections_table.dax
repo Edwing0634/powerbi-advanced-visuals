@@ -1,0 +1,87 @@
+// ============================================================
+// Collections Detail Table — HTML Content Visual
+// Shows unit-level collections breakdown: billed vs. collected,
+// retention rate with semaphore, and vs-previous-month delta.
+// Senior role sees all units; GA/GU see only their own.
+// ============================================================
+
+HTML_Collections_Table =
+
+VAR _cur_month  = MONTH( TODAY() )
+VAR _cur_year   = YEAR( TODAY() )
+VAR _prev_month = IF( _cur_month = 1, 12, _cur_month - 1 )
+VAR _prev_year  = IF( _cur_month = 1, _cur_year - 1, _cur_year )
+
+VAR _current =
+    CALCULATETABLE(
+        SUMMARIZE(
+            fact_collections,
+            dim_unit[unit_name],
+            "Billed",    SUM( fact_collections[billed_amount] ),
+            "Collected", SUM( fact_collections[collected_amount] )
+        ),
+        dim_date[month_num]  = _cur_month,
+        dim_date[year_num]   = _cur_year
+    )
+
+VAR _previous =
+    CALCULATETABLE(
+        SUMMARIZE(
+            fact_collections,
+            dim_unit[unit_name],
+            "PrevRate", DIVIDE( SUM( fact_collections[collected_amount] ), SUM( fact_collections[billed_amount] ), 0 ) * 100
+        ),
+        dim_date[month_num]  = _prev_month,
+        dim_date[year_num]   = _prev_year
+    )
+
+VAR _joined =
+    ADDCOLUMNS(
+        _current,
+        "Rate",     DIVIDE( [Collected], [Billed], 0 ) * 100,
+        "PrevRate", LOOKUPVALUE( [PrevRate], dim_unit[unit_name], [unit_name], _previous )
+    )
+
+VAR _rows =
+    CONCATENATEX(
+        TOPN( 20, _joined, [Rate], DESC ),
+        VAR _rate      = [Rate]
+        VAR _prev      = [PrevRate]
+        VAR _delta     = _rate - _prev
+        VAR _color =
+            SWITCH( TRUE(), _rate >= 90, "#28a745", _rate >= 75, "#ffc107", "#dc3545" )
+        VAR _arrow =
+            IF( _delta >= 0,
+                "<span style='color:#28a745;font-size:11px;'>▲" & FORMAT( _delta, "0.0" ) & "pp</span>",
+                "<span style='color:#dc3545;font-size:11px;'>▼" & FORMAT( ABS( _delta ), "0.0" ) & "pp</span>"
+            )
+        RETURN
+        "<tr style='border-bottom:1px solid #f0f0f0;'>
+          <td style='padding:7px 12px;font-weight:600;color:#212529;'>" & [unit_name] & "</td>
+          <td style='padding:7px 4px;text-align:right;color:#495057;'>$" & FORMAT( [Billed] / 1000000, "#,##0.0" ) & "M</td>
+          <td style='padding:7px 4px;text-align:right;color:#495057;'>$" & FORMAT( [Collected] / 1000000, "#,##0.0" ) & "M</td>
+          <td style='padding:7px 4px;text-align:center;'>
+            <span style='background:" & _color & ";color:#fff;border-radius:12px;padding:2px 10px;font-size:12px;font-weight:600;'>"
+              & FORMAT( _rate / 100, "0.0%" ) &
+            "</span>
+          </td>
+          <td style='padding:7px 12px;text-align:center;'>" & _arrow & "</td>
+        </tr>",
+        [unit_name], ASC
+    )
+
+RETURN
+"<div style='font-family:Segoe UI,sans-serif;overflow:auto;'>
+  <table style='width:100%;border-collapse:collapse;'>
+    <thead>
+      <tr style='background:#f8f9fa;border-bottom:2px solid #dee2e6;'>
+        <th style='padding:8px 12px;text-align:left;font-size:11px;color:#6c757d;text-transform:uppercase;'>Unit</th>
+        <th style='padding:8px 4px;text-align:right;font-size:11px;color:#6c757d;text-transform:uppercase;'>Billed</th>
+        <th style='padding:8px 4px;text-align:right;font-size:11px;color:#6c757d;text-transform:uppercase;'>Collected</th>
+        <th style='padding:8px 4px;text-align:center;font-size:11px;color:#6c757d;text-transform:uppercase;'>Rate</th>
+        <th style='padding:8px 12px;text-align:center;font-size:11px;color:#6c757d;text-transform:uppercase;'>vs Prev</th>
+      </tr>
+    </thead>
+    <tbody>" & _rows & "</tbody>
+  </table>
+</div>"

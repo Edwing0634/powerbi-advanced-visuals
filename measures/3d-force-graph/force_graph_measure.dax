@@ -1,0 +1,68 @@
+// ============================================================
+// 3D Force-Directed Graph — HTML Content Visual
+// Visualizes the agent hierarchy: Admin > Senior > GA > GU
+// using vasturiano/3d-force-graph loaded from CDN.
+// Node size = production volume; color = role tier.
+// ============================================================
+
+HTML_ForceGraph_Hierarchy =
+
+-- Build nodes: one per unit + one root node
+VAR _units =
+    SUMMARIZE(
+        dim_agent,
+        dim_agent[unit_name],
+        dim_agent[role],
+        "UnitProd", CALCULATE( SUM( fact_production[amount] ) )
+    )
+
+VAR _nodes_units =
+    CONCATENATEX(
+        _units,
+        VAR _size  = MAX( 3, MIN( 20, [UnitProd] / 10000000 ) )
+        VAR _color =
+            SWITCH( [role],
+                "GA",  "#0d6efd",
+                "GU",  "#6f42c1",
+                "Senior", "#fd7e14",
+                "#6c757d"
+            )
+        RETURN
+        "{""id"":""" & [unit_name] & """,""name"":""" & [unit_name] & """,""val"":" & FORMAT( _size, "0" ) & ",""color"":""" & _color & """}",
+        ","
+    )
+
+VAR _root_node = "{""id"":""HQ"",""name"":""Headquarters"",""val"":25,""color"":""#dc3545""}"
+
+VAR _links =
+    CONCATENATEX(
+        _units,
+        "{""source"":""HQ"",""target"":""" & [unit_name] & """}",
+        ","
+    )
+
+RETURN
+"<html><head>
+<script src='https://cdn.jsdelivr.net/npm/3d-force-graph@1.73.2/dist/3d-force-graph.min.js'></script>
+</head>
+<body style='margin:0;background:#0f1117;'>
+<div id='graph' style='width:100%;height:380px;'></div>
+<script>
+const data = {
+  nodes: [" & _root_node & "," & _nodes_units & "],
+  links: [" & _links & "]
+};
+const Graph = ForceGraph3D()(document.getElementById('graph'))
+  .graphData(data)
+  .nodeLabel('name')
+  .nodeColor('color')
+  .nodeVal('val')
+  .linkColor(() => 'rgba(255,255,255,0.2)')
+  .linkWidth(1)
+  .backgroundColor('#0f1117')
+  .onNodeClick(node => {
+    Graph.centerAt(node.x, node.y, node.z, 1000);
+    Graph.zoom(2, 1000);
+  });
+</script>
+</body></html>"

@@ -1,0 +1,66 @@
+// ============================================================
+// Semaphore KPI Card — HTML Content Visual
+// Shows achievement % with traffic-light color coding.
+// Thresholds: >= 100% green | >= 80% yellow | < 80% red
+// Adjust +4pp offset if your data has a known systematic gap.
+// ============================================================
+
+HTML_KPI_Semaphore =
+
+VAR _production    = SUM( fact_production[amount] )
+VAR _target        = SUM( fact_production[target_amount] )
+VAR _achievement   = DIVIDE( _production, _target, 0 ) * 100
+
+-- Apply calibration offset when comparing vs official system (+4 pp)
+VAR _achv_adjusted = _achievement + 4
+
+VAR _color =
+    SWITCH(
+        TRUE(),
+        _achv_adjusted >= 100, "#28a745",
+        _achv_adjusted >=  80, "#ffc107",
+        "#dc3545"
+    )
+
+VAR _icon =
+    SWITCH(
+        TRUE(),
+        _achv_adjusted >= 100, "▲",
+        _achv_adjusted >=  80, "●",
+        "▼"
+    )
+
+VAR _label_prod =
+    FORMAT( _production / 1000000, "#,##0.0" ) & "M"
+
+VAR _label_achv =
+    FORMAT( _achv_adjusted / 100, "0.0%" )
+
+RETURN
+"<div style='
+    font-family: Segoe UI, sans-serif;
+    background: #fff;
+    border-radius: 12px;
+    border-left: 6px solid " & _color & ";
+    padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    min-width: 180px;
+'>
+  <p style='margin:0; font-size:11px; color:#6c757d; text-transform:uppercase; letter-spacing:.5px;'>
+    Production
+  </p>
+  <p style='margin:4px 0 8px; font-size:26px; font-weight:700; color:#212529;'>
+    $" & _label_prod & "
+  </p>
+  <div style='display:flex; align-items:center; gap:8px;'>
+    <span style='
+        background:" & _color & ";
+        color:#fff;
+        border-radius:20px;
+        padding:2px 10px;
+        font-size:13px;
+        font-weight:600;
+    '>" & _icon & " " & _label_achv & "</span>
+    <span style='font-size:11px; color:#6c757d;'>vs target</span>
+  </div>
+</div>"

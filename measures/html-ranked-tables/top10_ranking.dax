@@ -1,0 +1,77 @@
+// ============================================================
+// TOP 10 Agent Ranking Table — HTML Content Visual
+// Uses CONCATENATEX to build a full HTML table sorted by
+// production descending. Medals for top 3. Role-aware: shows
+// only agents within the current user's unit via RLS context.
+// ============================================================
+
+HTML_Top10_Ranking =
+
+VAR _dataset =
+    TOPN(
+        10,
+        SUMMARIZE(
+            fact_production,
+            dim_agent[agent_name],
+            dim_agent[unit_name],
+            "Prod",   SUM( fact_production[amount] ),
+            "Target", SUM( fact_production[target_amount] )
+        ),
+        [Prod], DESC
+    )
+
+VAR _ranked =
+    ADDCOLUMNS(
+        _dataset,
+        "Achv",  DIVIDE( [Prod], [Target], 0 ) * 100,
+        "Rank",  RANKX( _dataset, [Prod],, DESC, Dense )
+    )
+
+VAR _rows =
+    CONCATENATEX(
+        _ranked,
+        VAR _medal =
+            SWITCH( [Rank], 1, "🥇", 2, "🥈", 3, "🥉", TEXT( [Rank], "0" ) )
+        VAR _color =
+            SWITCH(
+                TRUE(),
+                [Achv] >= 100, "#28a745",
+                [Achv] >=  80, "#ffc107",
+                "#dc3545"
+            )
+        VAR _prod_fmt  = "$" & FORMAT( [Prod]  / 1000000, "#,##0.0" ) & "M"
+        VAR _achv_fmt  = FORMAT( [Achv] / 100, "0.0%" )
+        RETURN
+        "<tr style='border-bottom:1px solid #f0f0f0;'>
+          <td style='padding:8px 12px;font-size:16px;'>" & _medal & "</td>
+          <td style='padding:8px 4px;font-weight:600;color:#212529;'>" & [agent_name] & "</td>
+          <td style='padding:8px 4px;'>
+            <span style='background:#e9ecef;border-radius:12px;padding:2px 8px;font-size:11px;color:#495057;'>"
+              & [unit_name] &
+            "</span>
+          </td>
+          <td style='padding:8px 4px;text-align:right;font-weight:600;'>" & _prod_fmt & "</td>
+          <td style='padding:8px 12px;text-align:right;'>
+            <span style='background:" & _color & ";color:#fff;border-radius:12px;padding:2px 10px;font-size:12px;font-weight:600;'>"
+              & _achv_fmt &
+            "</span>
+          </td>
+        </tr>",
+        [Rank], ASC
+    )
+
+RETURN
+"<div style='font-family:Segoe UI,sans-serif;overflow:auto;'>
+  <table style='width:100%;border-collapse:collapse;'>
+    <thead>
+      <tr style='border-bottom:2px solid #dee2e6;'>
+        <th style='padding:8px 12px;text-align:left;font-size:11px;color:#6c757d;text-transform:uppercase;'>#</th>
+        <th style='padding:8px 4px;text-align:left;font-size:11px;color:#6c757d;text-transform:uppercase;'>Agent</th>
+        <th style='padding:8px 4px;text-align:left;font-size:11px;color:#6c757d;text-transform:uppercase;'>Unit</th>
+        <th style='padding:8px 4px;text-align:right;font-size:11px;color:#6c757d;text-transform:uppercase;'>Production</th>
+        <th style='padding:8px 12px;text-align:right;font-size:11px;color:#6c757d;text-transform:uppercase;'>Achievement</th>
+      </tr>
+    </thead>
+    <tbody>" & _rows & "</tbody>
+  </table>
+</div>"

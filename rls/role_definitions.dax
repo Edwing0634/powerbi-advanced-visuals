@@ -1,0 +1,48 @@
+// ============================================================
+// Row-Level Security (RLS) — Role Definitions
+// 4-level hierarchy: Admin > Senior > GA > GU
+// Apply these filters in Power BI Desktop > Modeling > Manage Roles
+// ============================================================
+
+// -----------------------------------------------
+// ROLE: Admin
+// Sees everything — no filter applied on any table
+// -----------------------------------------------
+// Table: dim_agent   → (no filter)
+// Table: dim_unit    → (no filter)
+// Table: fact_production → (no filter)
+
+
+// -----------------------------------------------
+// ROLE: Senior
+// Sees all units but only agents under their supervision
+// -----------------------------------------------
+// Table: dim_agent
+[supervisor_email] = USERPRINCIPALNAME()
+    || [role] IN { "GA", "GU" }
+
+
+// -----------------------------------------------
+// ROLE: GA  (Agency Manager)
+// Sees only their own unit
+// -----------------------------------------------
+// Table: dim_unit
+[unit_manager_email] = USERPRINCIPALNAME()
+
+// Table: dim_agent  (cascades via relationship)
+// → automatically filtered by dim_unit RLS
+
+
+// -----------------------------------------------
+// ROLE: GU  (Unit Manager)
+// Sees only their own group within the unit
+// -----------------------------------------------
+// Table: dim_agent
+[group_manager_email] = USERPRINCIPALNAME()
+    || [email] = USERPRINCIPALNAME()
+
+// ============================================================
+// USERPRINCIPALNAME() resolution
+// In Power BI Service: returns the logged-in user's email.
+// For testing in Desktop: use "View As Role" with a test email.
+// ============================================================

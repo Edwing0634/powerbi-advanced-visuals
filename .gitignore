@@ -1,0 +1,17 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Power BI Desktop files (contain internal data)
+*.pbix
+*.pbit
+
+# Excel with real data
+*.xlsx
+*.xls
+*.csv
+
+# IDEs
+.vscode/
+.idea/

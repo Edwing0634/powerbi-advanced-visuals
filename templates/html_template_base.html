@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<!--
+  Base HTML reference template for Power BI HTML Content visual measures.
+  Copy this structure into your DAX string concatenation.
+  Replace {{ placeholders }} with DAX variable values.
+
+  IMPORTANT: The HTML Content visual runs in a sandboxed iframe.
+  - External CDN scripts ARE allowed (Chart.js, 3d-force-graph, etc.)
+  - Local file references are NOT allowed
+  - Keep inline styles — external CSS files won't load
+-->
+<html>
+<head>
+  <!-- Load Chart.js from CDN if needed -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body style="margin:0; padding:12px; font-family:'Segoe UI', system-ui, sans-serif; background:#fff;">
+
+  <!-- KPI Header -->
+  <p style="margin:0 0 4px; font-size:11px; color:#6c757d; text-transform:uppercase; letter-spacing:.5px;">
+    {{ METRIC_LABEL }}
+  </p>
+
+  <!-- Main value -->
+  <p style="margin:0 0 8px; font-size:32px; font-weight:700; color:#212529; line-height:1;">
+    {{ FORMATTED_VALUE }}
+  </p>
+
+  <!-- Semaphore badge -->
+  <span style="
+    background: {{ SEMAPHORE_COLOR }};
+    color: #fff;
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 13px;
+    font-weight: 600;
+  ">
+    {{ ICON }} {{ ACHIEVEMENT_PCT }}
+  </span>
+
+  <!-- Subtitle -->
+  <p style="margin:8px 0 0; font-size:11px; color:#6c757d;">
+    {{ SUBTITLE_TEXT }}
+  </p>
+
+  <!-- Chart canvas (optional) -->
+  <canvas id="chart" style="margin-top:12px; max-height:160px;"></canvas>
+
+  <script>
+    // Initialize chart here
+    // new Chart(document.getElementById('chart'), { ... });
+  </script>
+
+</body>
+</html>
